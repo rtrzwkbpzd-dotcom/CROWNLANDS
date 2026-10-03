@@ -1,6 +1,6 @@
 # CROWNLANDS
 
-Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0.1 nutzt eine einfache 2D-Ansicht mit gezeichneten Platzhaltern. Zielplattform der Entwicklung: Godot 4.4.1 (GDScript, Compatibility-Renderer). Kein externer Asset-Download erforderlich.
+Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0.2 nutzt eine einfache 2D-Ansicht mit gezeichneten Platzhaltern. Zielplattform der Entwicklung: Godot 4.4.1 (GDScript, Compatibility-Renderer). Kein externer Asset-Download erforderlich.
 
 ## Starten
 
@@ -17,7 +17,8 @@ Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0
 - Vier endliche Rohstoffarten; Farmen liefern im Prototyp unbegrenzt Nahrung.
 - Sechs Gebäudetypen mit Bauzeiten; Baufortschritt erfordert einen anwesenden Arbeiter.
 - Fünf Einheitentypen, Produktionswarteschlangen und Wohnraumbegrenzung.
-- Bewegung, einfache Gruppenformationen, Nah-/Fernkampf, Lebenspunkte und automatische Nahbereichsverteidigung der Armee.
+- Bewegung mit A*-Wegfindung um Gebäude und Rohstofffelder, einfache Gruppenformationen, Nah-/Fernkampf, Lebenspunkte und automatische Nahbereichsverteidigung der Armee.
+- Arbeiter tragen bis zu 20 Einheiten Rohstoff und bringen sie zum Rathaus, Holzlager oder zur Farm zurück, bevor das Lager den Ertrag erhält.
 - KI mit eigener Wirtschaft, tatsächlichem Bau, Produktion und Angriffen.
 - Sichtweite und grobes Raster für Fog of War; Feinde außerhalb aktueller Sicht werden ausgeblendet.
 - Pause, Neustart und Sieg/Niederlage.
@@ -40,6 +41,7 @@ Ein Tipp auf ein eigenes Gebäude wählt es aus; mit gewählten Arbeitern dient 
 
 - `scripts/rules.gd`: Kosten, Werte und Gebäudedefinitionen.
 - `scripts/simulation.gd`: Wirtschaft, Bau, Produktion, Kampf, KI und Sicht; ohne UI-Abhängigkeit.
+- `scripts/navigation.gd`: Raster-Wegsuche mit blockierten Gebäuden und Rohstofffeldern.
 - `scripts/game.gd`: gezeichnete Karte, HUD, Auswahl und Touch-/Mauseingabe.
 - `scenes/main.tscn`: Einstiegsszene.
 - `tests/smoke.gd`: deterministischer Test für Wirtschaft, Bau, KI, Produktion und Spielende.
@@ -62,6 +64,6 @@ Offizielle Anleitung: https://docs.godotengine.org/en/stable/tutorials/export/ex
 
 ## Bekannte Grenzen und Ausbau
 
-Version 0.1 ist ein spielbarer Funktionsprototyp, kein fertiges 3D-Spiel. Bewegung führt direkt zum Ziel; Gebäude/Rohstoffe sind noch keine Navigationshindernisse. Arbeiter schreiben Rohstoffe direkt ins Lager, ohne Rücktransport. Es gibt keine Kavallerie, Belagerung, Zeitalter, Forschung, Audio, Kampagne, Speichern oder Multiplayer. Fernkampfschaden wird direkt angewendet. Die drei KI-Persönlichkeiten des Konzepts sind noch nicht enthalten.
+Version 0.2 bleibt ein 2D-Funktionsprototyp mit gezeichneten Platzhaltern. Der Rasterpfadfinder plant um Gebäude und Rohstofffelder, und Arbeiter liefern ihre Ladung zurück. Es gibt keine Kavallerie, Belagerung, Zeitalter, Forschung, Audio, Kampagne, Speichern oder Multiplayer. Fernkampfschaden wird direkt angewendet. Die drei KI-Persönlichkeiten des Konzepts sind noch nicht enthalten.
 
 Nächste Prioritäten: echte iPad-/iPhone-Bedienprüfung, Navigation um Hindernisse, Rohstoff-Rücktransport, Balance und Feedback/Audio. Erst anschließend 3D-Ansicht, Zeitalter und weitere Einheiten. Der Name CROWNLANDS ist ein Arbeitstitel; Markenverfügbarkeit wurde nicht geprüft.

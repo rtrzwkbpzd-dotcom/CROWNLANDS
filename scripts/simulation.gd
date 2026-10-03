@@ -1,5 +1,6 @@
 extends RefCounted
 const Rules = preload("res://scripts/rules.gd")
+const Navigation = preload("res://scripts/navigation.gd")
 var units: Array = []
 var buildings: Array = []
 var resources: Array = []
@@ -33,7 +34,7 @@ func id() -> int:
  return value
 
 func add_unit(kind: String, team: int, pos: Vector2) -> Dictionary:
- var u = {"id":id(),"kind":kind,"team":team,"pos":pos,"hp":Rules.UNITS[kind].hp,"order":"idle","target":-1,"goal":pos,"cooldown":0.0,"gather":0.0}
+ var u = {"id":id(),"kind":kind,"team":team,"pos":pos,"hp":Rules.UNITS[kind].hp,"order":"idle","target":-1,"goal":pos,"cooldown":0.0,"gather":0.0,"carry_kind":"","carry_amount":0,"nav_path":[],"nav_index":0}
  units.append(u)
  return u
 
@@ -116,6 +117,7 @@ func build(kind: String, team: int, pos: Vector2, worker_ids: Array) -> bool:
  for w in workers:
   w.order = "build"
   w.target = b.id
+  command([w.id],pos,b.id)
  return true
 
 func command(ids: Array, point: Vector2, target_id: int = -1):
@@ -133,7 +135,39 @@ func command(ids: Array, point: Vector2, target_id: int = -1):
    elif u.kind == "worker" and target.has("amount"): u.order = "gather"
    elif u.kind == "worker" and target.get("kind") == "farm" and target.team == u.team and target.progress >= 1.0: u.order = "gather"
    elif u.kind == "worker" and target.has("progress") and target.team == u.team and target.progress < 1.0: u.order = "build"
+  var approach := 0.0
+  if not target.is_empty():
+   if u.order == "gather": approach = 43.0
+   elif u.order == "build": approach = Rules.BUILDINGS[target.kind].size + 22.0
+   elif u.order == "attack": approach = (Rules.BUILDINGS[target.kind].size + 18.0) if target.has("progress") else 30.0
+  u.nav_path = Navigation.route(u.pos,point,buildings,resources,target_id if u.order == "gather" and not target.is_empty() and target.has("amount") else -1,approach)
+  u.nav_index = 0
+  u.goal = u.nav_path[-1] if not u.nav_path.is_empty() else point
   index += 1
+
+func nearest_dropoff(team: int, kind: String, from: Vector2) -> Dictionary:
+ var preferred := "lumber" if kind == "wood" else ("farm" if kind == "food" else "town")
+ var best: Dictionary = {}
+ var distance := INF
+ for b in buildings:
+  if b.team != team or b.progress < 1.0 or b.kind not in [preferred,"town"]: continue
+  var d := from.distance_to(b.pos)
+  if d < distance:
+   best = b
+   distance = d
+ return best
+
+func send_worker_to_dropoff(u: Dictionary, source_id: int):
+ var depot := nearest_dropoff(u.team,u.carry_kind,u.pos)
+ if depot.is_empty():
+  u.order = "idle"
+  return
+ u.resume_target = source_id
+ u.order = "return"
+ u.target = depot.id
+ u.nav_path = Navigation.route(u.pos,depot.pos,buildings,resources,-1,Rules.BUILDINGS[depot.kind].size+22.0)
+ u.nav_index = 0
+ u.goal = u.nav_path[-1] if not u.nav_path.is_empty() else depot.pos
 
 func visible(pos: Vector2, team: int = 0) -> bool:
  for u in units:
@@ -148,6 +182,16 @@ func update_discovery():
    if visible(Vector2(x*40+20,y*40+20)): discovered[Vector2i(x,y)] = true
 
 func move_towards(u: Dictionary, point: Vector2, dt: float):
+ var route_path: Array = u.get("nav_path",[])
+ if not route_path.is_empty():
+  var route_index: int = u.get("nav_index",0)
+  while route_index < route_path.size()-1 and u.pos.distance_to(route_path[route_index]) < 7.0:
+   route_index += 1
+  u.nav_index = route_index
+  point = route_path[route_index]
+  if route_index == route_path.size()-1 and u.pos.distance_to(point) < 7.0:
+   u.nav_path = []
+   return
  var step = Rules.UNITS[u.kind].speed*dt
  u.pos = u.pos.move_toward(point,step)
  # Soft separation avoids stacks. Buildings remain a graybox limitation.
@@ -177,21 +221,37 @@ func tick(dt: float):
    move_towards(u,u.goal,dt)
    if u.pos.distance_to(u.goal) < 8: u.order = "idle"
   elif u.order == "gather":
-   var radius = 40.0 if target.has("progress") else 28.0
-   if u.pos.distance_to(target.pos) > radius: move_towards(u,target.pos,dt)
+    var radius = 52.0
+    if u.pos.distance_to(target.pos) > radius: move_towards(u,target.pos,dt)
+    else:
+     u.gather += dt
+     if u.gather >= 1.0:
+      u.gather -= 1.0
+      var amount = 5
+      var key: String = target.kind if target.has("amount") else "food"
+      if target.has("amount"):
+       amount = mini(amount,target.amount)
+       target.amount -= amount
+      if u.carry_kind == "" or u.carry_kind == key: u.carry_kind = key
+      var loaded: int = mini(amount,20-u.carry_amount)
+      u.carry_amount += loaded
+      if u.carry_amount >= 20 or (target.has("amount") and target.amount <= 0): send_worker_to_dropoff(u,target.id)
+  elif u.order == "return":
+   if target.is_empty():
+    u.order = "idle"
+   elif u.pos.distance_to(target.pos) > Rules.BUILDINGS[target.kind].size+46.0:
+    move_towards(u,target.pos,dt)
    else:
-    u.gather += dt
-    if u.gather >= 1.0:
-     u.gather -= 1.0
-     var amount = 5
-     var key: String = target.kind if target.has("amount") else "food"
-     if target.has("amount"):
-      amount = mini(amount,target.amount)
-      target.amount -= amount
-      if target.amount <= 0: u.order = "idle"
-     wallets[u.team][key] += amount
+    wallets[u.team][u.carry_kind] += u.carry_amount
+    u.carry_amount = 0
+    u.carry_kind = ""
+    var source = entity(u.get("resume_target",-1))
+    if not source.is_empty() and (not source.has("amount") or source.amount > 0):
+     command([u.id],source.pos,source.id)
+    else:
+     u.order = "idle"
   elif u.order == "build":
-   if u.pos.distance_to(target.pos) > Rules.BUILDINGS[target.kind].size+18: move_towards(u,target.pos,dt)
+   if u.pos.distance_to(target.pos) > Rules.BUILDINGS[target.kind].size+30: move_towards(u,target.pos,dt)
    else:
     target.progress = minf(1.0,target.progress+dt/Rules.BUILDINGS[target.kind].time)
     if target.progress >= 1.0: u.order = "idle"
