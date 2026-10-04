@@ -22,6 +22,7 @@ Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0
 - KI mit eigener Wirtschaft, tatsächlichem Bau, Produktion und Angriffen.
 - Sichtweite und grobes Raster für Fog of War; Feinde außerhalb aktueller Sicht werden ausgeblendet.
 - Pause, Neustart und Sieg/Niederlage.
+- Interaktives Einstiegstutorial für Auswahl, Rohstoffabbau, Kaserne und Einheitenproduktion; jederzeit überspringbar oder neu startbar.
 - Alles lokal, ohne Anmeldung, Werbung, Tracking, Backend oder Zahlungsfunktionen.
 
 ## Steuerung
@@ -42,7 +43,7 @@ Ein Tipp auf ein eigenes Gebäude wählt es aus; mit gewählten Arbeitern dient 
 - `scripts/rules.gd`: Kosten, Werte und Gebäudedefinitionen.
 - `scripts/simulation.gd`: Wirtschaft, Bau, Produktion, Kampf, KI und Sicht; ohne UI-Abhängigkeit.
 - `scripts/navigation.gd`: Raster-Wegsuche mit blockierten Gebäuden und Rohstofffeldern.
-- `scripts/game.gd`: gezeichnete Karte, HUD, Auswahl und Touch-/Mauseingabe.
+- `scripts/game.gd`: gezeichnete Karte, HUD, Auswahl, Tutorial und Touch-/Mauseingabe.
 - `scenes/main.tscn`: Einstiegsszene.
 - `tests/smoke.gd`: deterministischer Test für Wirtschaft, Bau, KI, Produktion und Spielende.
 

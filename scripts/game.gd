@@ -15,6 +15,12 @@ var touch_distance = 0.0
 var stats: Label
 var hint: Label
 var actions: HBoxContainer
+var tutorial_card: PanelContainer
+var tutorial_text: Label
+var tutorial_button: Button
+var tutorial_active = true
+var tutorial_stage = 0
+var tutorial_start_total = 0
 var action_key = ""
 var paused = false
 var fog = true
@@ -39,6 +45,24 @@ func _ready():
  row.add_child(stats)
  for entry in [["−",func(): zoom_level = maxf(0.35,zoom_level-0.1)],["+",func(): zoom_level = minf(1.5,zoom_level+0.1)],["Pause",func(): paused = not paused],["Neustart",func(): get_tree().reload_current_scene()]]:
   button(row,entry[0],entry[1])
+ tutorial_button = Button.new()
+ tutorial_button.text = "Tutorial beenden"
+ tutorial_button.custom_minimum_size = Vector2(150,44)
+ tutorial_button.pressed.connect(toggle_tutorial)
+ row.add_child(tutorial_button)
+ tutorial_card = PanelContainer.new()
+ tutorial_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+ tutorial_card.offset_left = 170
+ tutorial_card.offset_right = -170
+ tutorial_card.offset_top = 54
+ tutorial_card.offset_bottom = 132
+ root.add_child(tutorial_card)
+ tutorial_text = Label.new()
+ tutorial_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ tutorial_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+ tutorial_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+ tutorial_text.add_theme_font_size_override("font_size",18)
+ tutorial_card.add_child(tutorial_text)
  var bottom = PanelContainer.new()
  bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
  bottom.offset_top = -155
@@ -62,7 +86,9 @@ func _ready():
  col.add_child(scroll)
  actions = HBoxContainer.new()
  scroll.add_child(actions)
+ tutorial_start_total = resource_total(sim.wallets[0])
  update_hud()
+ update_tutorial()
 
 func button(parent: Node, title: String, callback: Callable):
  var b = Button.new()
@@ -70,6 +96,59 @@ func button(parent: Node, title: String, callback: Callable):
  b.custom_minimum_size = Vector2(100,44)
  b.pressed.connect(callback)
  parent.add_child(b)
+
+func resource_total(wallet: Dictionary) -> int:
+ return wallet.wood + wallet.food + wallet.stone + wallet.gold
+
+func toggle_tutorial():
+ tutorial_active = not tutorial_active
+ if tutorial_active:
+  tutorial_stage = 0
+  tutorial_start_total = resource_total(sim.wallets[0])
+  tutorial_card.show()
+  tutorial_button.text = "Tutorial beenden"
+ else:
+  tutorial_card.hide()
+  tutorial_button.text = "Tutorial starten"
+
+func update_tutorial():
+ if not tutorial_active: return
+ if sim.winner == 0:
+  tutorial_text.text = "Sieg! Du hast das gegnerische Rathaus zerstört. Starte eine neue Partie für eine weitere Runde."
+  return
+ elif sim.winner == 1:
+  tutorial_text.text = "Dein Rathaus wurde zerstört. Du kannst neu starten oder das Tutorial überspringen."
+  return
+ if tutorial_stage == 0:
+  for value in selected:
+   var e = sim.entity(value)
+   if not e.is_empty() and e.get("kind","") == "worker": tutorial_stage = 1
+ elif tutorial_stage == 1:
+  for value in selected:
+   var e = sim.entity(value)
+   if not e.is_empty() and e.get("kind","") == "worker" and e.order == "gather": tutorial_stage = 2
+ elif tutorial_stage == 2 and resource_total(sim.wallets[0]) > tutorial_start_total:
+  tutorial_stage = 3
+ elif tutorial_stage == 3 and placement == "barracks":
+  tutorial_stage = 4
+ elif tutorial_stage == 4:
+  for b in sim.buildings:
+   if b.team == 0 and b.kind == "barracks": tutorial_stage = 5
+ elif tutorial_stage == 5:
+  for b in sim.buildings:
+   if b.team == 0 and b.kind == "barracks" and b.progress >= 1.0: tutorial_stage = 6
+ elif tutorial_stage == 6:
+  for b in sim.buildings:
+   if b.team == 0 and b.kind == "barracks" and not b.queue.is_empty(): tutorial_stage = 7
+ match tutorial_stage:
+  0: tutorial_text.text = "CROWNLANDS • 1/5  Wähle einen Arbeiter: tippe auf einen blauen Arbeiter oder auf „Arbeiter“."
+  1: tutorial_text.text = "2/5  Schicke ihn sammeln: tippe auf ein sichtbares Holz-, Nahrungs-, Stein- oder Goldfeld."
+  2: tutorial_text.text = "2/5  Der Arbeiter bringt bis zu 20 Rohstoffe zurück zum Lager. Warte, bis der Vorrat steigt."
+  3: tutorial_text.text = "3/5  Tippe unten auf „Kaserne“."
+  4: tutorial_text.text = "3/5  Setze die Kaserne auf einen grünen, freien Platz nahe deinem Dorf."
+  5: tutorial_text.text = "3/5  Dein Arbeiter errichtet die Kaserne. Lass ihn dort, bis der Bau abgeschlossen ist."
+  6: tutorial_text.text = "4/5  Tippe auf deine fertige Kaserne und bilde einen Schwertkämpfer aus."
+  7: tutorial_text.text = "Grundlagen geschafft! Wähle „Armee“, erkunde die Karte und greife das rote Rathaus an. Viel Erfolg!"
 
 func select_group(kind: String):
  selected.clear()
@@ -203,6 +282,7 @@ func _process(dt):
   while accumulator >= 0.1:
    sim.tick(0.1)
    accumulator -= 0.1
+ update_tutorial()
  update_hud()
  queue_redraw()
 
