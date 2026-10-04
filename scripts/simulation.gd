@@ -135,6 +135,12 @@ func command(ids: Array, point: Vector2, target_id: int = -1):
    elif u.kind == "worker" and target.has("amount"): u.order = "gather"
    elif u.kind == "worker" and target.get("kind") == "farm" and target.team == u.team and target.progress >= 1.0: u.order = "gather"
    elif u.kind == "worker" and target.has("progress") and target.team == u.team and target.progress < 1.0: u.order = "build"
+  if u.order == "gather" and u.carry_amount > 0:
+   var source_kind: String = target.kind if target.has("amount") else "food"
+   if u.carry_kind != source_kind:
+    send_worker_to_dropoff(u,target.id)
+    index += 1
+    continue
   var approach := 0.0
   if not target.is_empty():
    if u.order == "gather": approach = 43.0
@@ -142,7 +148,12 @@ func command(ids: Array, point: Vector2, target_id: int = -1):
    elif u.order == "attack": approach = (Rules.BUILDINGS[target.kind].size + 18.0) if target.has("progress") else 30.0
   u.nav_path = Navigation.route(u.pos,point,buildings,resources,target_id if u.order == "gather" and not target.is_empty() and target.has("amount") else -1,approach)
   u.nav_index = 0
-  u.goal = u.nav_path[-1] if not u.nav_path.is_empty() else point
+  if u.nav_path.is_empty():
+   u.order = "idle"
+   u.target = -1
+   u.goal = u.pos
+  else:
+   u.goal = u.nav_path[-1]
   index += 1
 
 func nearest_dropoff(team: int, kind: String, from: Vector2) -> Dictionary:
@@ -167,7 +178,12 @@ func send_worker_to_dropoff(u: Dictionary, source_id: int):
  u.target = depot.id
  u.nav_path = Navigation.route(u.pos,depot.pos,buildings,resources,-1,Rules.BUILDINGS[depot.kind].size+22.0)
  u.nav_index = 0
- u.goal = u.nav_path[-1] if not u.nav_path.is_empty() else depot.pos
+ if u.nav_path.is_empty():
+  u.order = "idle"
+  u.target = -1
+  u.goal = u.pos
+ else:
+  u.goal = u.nav_path[-1]
 
 func visible(pos: Vector2, team: int = 0) -> bool:
  for u in units:
@@ -227,14 +243,13 @@ func tick(dt: float):
      u.gather += dt
      if u.gather >= 1.0:
       u.gather -= 1.0
-      var amount = 5
+      var amount: int = mini(5,20-u.carry_amount)
       var key: String = target.kind if target.has("amount") else "food"
       if target.has("amount"):
        amount = mini(amount,target.amount)
        target.amount -= amount
-      if u.carry_kind == "" or u.carry_kind == key: u.carry_kind = key
-      var loaded: int = mini(amount,20-u.carry_amount)
-      u.carry_amount += loaded
+      u.carry_kind = key
+      u.carry_amount += amount
       if u.carry_amount >= 20 or (target.has("amount") and target.amount <= 0): send_worker_to_dropoff(u,target.id)
   elif u.order == "return":
    if target.is_empty():
@@ -311,8 +326,7 @@ func ai_step():
  for b in buildings:
   if b.team == 1 and b.progress < 1.0:
    if not workers.any(func(w): return w.order == "build" and w.target == b.id) and not workers.is_empty():
-    workers[0].order = "build"
-    workers[0].target = b.id
+    command([workers[0].id],b.pos,b.id)
    return
  var to_build = ""
  if not "barracks" in kinds: to_build = "barracks"
