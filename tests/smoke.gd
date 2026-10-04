@@ -42,6 +42,36 @@ func _initialize():
  for point in route:
   if point.distance_to(obstacle.pos)<57.0: crosses_town = true
  check(not crosses_town,"Pathfinder does not route through the starting town")
+ var cargo_sim = Sim.new()
+ var cargo_worker = cargo_sim.units[0]
+ var food_source = cargo_sim.resources.filter(func(r): return r.kind == "food")[0]
+ cargo_worker.carry_kind = "wood"
+ cargo_worker.carry_amount = 10
+ var wood_before: int = cargo_sim.wallets[0].wood
+ var food_before: int = food_source.amount
+ cargo_sim.command([cargo_worker.id],food_source.pos,food_source.id)
+ check(cargo_worker.order == "return","Changing resource types returns the previous load first")
+ check(food_source.amount == food_before,"Changing resource types does not consume the new source early")
+ for i in range(500): cargo_sim.tick(0.1)
+ check(cargo_sim.wallets[0].wood == wood_before + 10,"Partial wood load is credited as wood")
+ check(food_source.amount < food_before,"Worker resumes gathering the newly selected resource")
+ var blocked_sim = Sim.new()
+ for y in range(28):
+  blocked_sim.add_building("town",0,Vector2(900,y*40+20),true)
+ var blocked_worker = blocked_sim.units[0]
+ var blocked_start: Vector2 = blocked_worker.pos
+ blocked_sim.command([blocked_worker.id],Vector2(1550,550))
+ check(blocked_worker.order == "idle" and blocked_worker.nav_path.is_empty(),"Unreachable destination rejects the move")
+ for i in range(20): blocked_sim.tick(0.1)
+ check(blocked_worker.pos.distance_to(blocked_start) < 1.0,"Rejected move does not pass through obstacles")
+ var repair_sim = Sim.new()
+ var repair_worker = repair_sim.units.filter(func(u): return u.team == 1 and u.kind == "worker")[0]
+ var ai_site = repair_sim.add_building("house",1,Vector2(1300,280),false)
+ var ai_wood = repair_sim.resources.filter(func(r): return r.kind == "wood" and r.pos.x > 1400)[0]
+ repair_sim.command([repair_worker.id],ai_wood.pos,ai_wood.id)
+ repair_sim.ai_step()
+ check(repair_worker.order == "build" and repair_worker.target == ai_site.id,"AI replaces the missing builder")
+ check(not repair_worker.nav_path.is_empty() and repair_worker.goal.distance_to(ai_site.pos) < 100.0,"Replacement builder gets a path to the site")
  var enemy_town = sim.buildings.filter(func(b): return b.team==1 and b.kind=="town")[0]
  sim.winner = -1
  enemy_town.hp = 1.0
