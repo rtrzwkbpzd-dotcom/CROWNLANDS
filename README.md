@@ -55,7 +55,7 @@ godot --headless --path . --script res://tests/smoke.gd
 godot --headless --path . --quit-after 40
 ```
 
-Getestet mit Godot 4.4.1 unter Linux: Projektimport, Headless-Lauf und Simulationstest. Rendering und Touch auf Apple-Geräten müssen separat geprüft werden.
+Wirtschaft, Wegsuche, Bau, KI und Siegbedingung liefen in den vorhandenen Simulationstests mit Godot 4.4.1 unter Linux. Das Tutorial wurde danach ergänzt und braucht noch einen Lauf im Godot-Editor. Rendering und Touch auf Apple-Geräten müssen separat geprüft werden.
 
 ## iOS-Build als nächster Schritt
 
@@ -67,4 +67,4 @@ Offizielle Anleitung: https://docs.godotengine.org/en/stable/tutorials/export/ex
 
 Version 0.2 bleibt ein 2D-Funktionsprototyp mit gezeichneten Platzhaltern. Der Rasterpfadfinder plant um Gebäude und Rohstofffelder, und Arbeiter liefern ihre Ladung zurück. Es gibt keine Kavallerie, Belagerung, Zeitalter, Forschung, Audio, Kampagne, Speichern oder Multiplayer. Fernkampfschaden wird direkt angewendet. Die drei KI-Persönlichkeiten des Konzepts sind noch nicht enthalten.
 
-Nächste Prioritäten: echte iPad-/iPhone-Bedienprüfung, Navigation um Hindernisse, Rohstoff-Rücktransport, Balance und Feedback/Audio. Erst anschließend 3D-Ansicht, Zeitalter und weitere Einheiten. Der Name CROWNLANDS ist ein Arbeitstitel; Markenverfügbarkeit wurde nicht geprüft.
+Nächste Prioritäten: Tutorial im Editor durchspielen, Balance und Feedback/Audio verbessern und auf iPad/iPhone testen. Danach können 3D-Ansicht, Zeitalter und weitere Einheiten folgen. Der Name CROWNLANDS ist ein Arbeitstitel; Markenverfügbarkeit wurde nicht geprüft.
