@@ -3,8 +3,8 @@ const Simulation = preload("res://scripts/simulation.gd")
 const Rules = preload("res://scripts/rules.gd")
 var sim = Simulation.new()
 var selected: Array = []
-var camera_pos = Vector2(400,550)
-var zoom_level = 0.7
+var camera_pos = Vector2(600,550)
+var zoom_level = 1.0
 var placement = ""
 var drag_start = Vector2.ZERO
 var dragging = false
@@ -25,7 +25,9 @@ var action_key = ""
 var paused = false
 var fog = true
 var accumulator = 0.0
-const COLORS = [Color("66c7ed"),Color("ef7973")]
+const COLORS = [Color("76bcd0"),Color("c96d5d")]
+const INK = Color("251f1c")
+const CREAM = Color("f2e7c9")
 
 func _ready():
  var layer = CanvasLayer.new()
@@ -36,22 +38,26 @@ func _ready():
  layer.add_child(root)
  var top = PanelContainer.new()
  top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+ style_panel(top)
  root.add_child(top)
  var row = HBoxContainer.new()
  top.add_child(row)
  stats = Label.new()
  stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  stats.add_theme_font_size_override("font_size",18)
+ stats.add_theme_color_override("font_color",CREAM)
  row.add_child(stats)
  for entry in [["−",func(): zoom_level = maxf(0.35,zoom_level-0.1)],["+",func(): zoom_level = minf(1.5,zoom_level+0.1)],["Pause",func(): paused = not paused],["Neustart",func(): get_tree().reload_current_scene()]]:
   button(row,entry[0],entry[1])
  tutorial_button = Button.new()
  tutorial_button.text = "Tutorial beenden"
  tutorial_button.custom_minimum_size = Vector2(150,44)
+ style_button(tutorial_button)
  tutorial_button.pressed.connect(toggle_tutorial)
  row.add_child(tutorial_button)
  tutorial_card = PanelContainer.new()
  tutorial_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+ style_panel(tutorial_card)
  tutorial_card.offset_left = 170
  tutorial_card.offset_right = -170
  tutorial_card.offset_top = 54
@@ -62,15 +68,18 @@ func _ready():
  tutorial_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
  tutorial_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
  tutorial_text.add_theme_font_size_override("font_size",18)
+ tutorial_text.add_theme_color_override("font_color",CREAM)
  tutorial_card.add_child(tutorial_text)
  var bottom = PanelContainer.new()
  bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+ style_panel(bottom)
  bottom.offset_top = -155
  root.add_child(bottom)
  var col = VBoxContainer.new()
  bottom.add_child(col)
  hint = Label.new()
  hint.add_theme_font_size_override("font_size",16)
+ hint.add_theme_color_override("font_color",CREAM)
  col.add_child(hint)
  var groups = HBoxContainer.new()
  col.add_child(groups)
@@ -94,8 +103,34 @@ func button(parent: Node, title: String, callback: Callable):
  var b = Button.new()
  b.text = title
  b.custom_minimum_size = Vector2(100,44)
+ style_button(b)
  b.pressed.connect(callback)
  parent.add_child(b)
+
+func style_button(b: Button):
+ var normal = StyleBoxFlat.new()
+ normal.bg_color = Color("61452f")
+ normal.border_color = Color("b68b54")
+ normal.set_border_width_all(2)
+ normal.set_corner_radius_all(5)
+ var hover = normal.duplicate()
+ hover.bg_color = Color("805b38")
+ var pressed = normal.duplicate()
+ pressed.bg_color = Color("3f3028")
+ b.add_theme_stylebox_override("normal",normal)
+ b.add_theme_stylebox_override("hover",hover)
+ b.add_theme_stylebox_override("pressed",pressed)
+ b.add_theme_font_size_override("font_size",16)
+ b.add_theme_color_override("font_color",CREAM)
+ b.add_theme_color_override("font_hover_color",Color.WHITE)
+
+func style_panel(panel: PanelContainer):
+ var style = StyleBoxFlat.new()
+ style.bg_color = Color("302b27",0.96)
+ style.border_color = Color("9c764a")
+ style.set_border_width_all(2)
+ style.set_content_margin_all(7)
+ panel.add_theme_stylebox_override("panel",style)
 
 func resource_total(wallet: Dictionary) -> int:
  return wallet.wood + wallet.food + wallet.stone + wallet.gold
@@ -289,45 +324,127 @@ func _process(dt):
 func label_at(p: Vector2, value: String, color: Color = Color.WHITE, size: int = 15):
  draw_string(ThemeDB.fallback_font,p,value,HORIZONTAL_ALIGNMENT_LEFT,-1,size,color)
 
-func _draw():
+func draw_ground():
  var map_rect = Rect2(world_screen(Vector2.ZERO),Rules.MAP_SIZE*zoom_level)
- draw_rect(map_rect,Color("416345"))
- for x in range(0,1801,80): draw_line(world_screen(Vector2(x,0)),world_screen(Vector2(x,1100)),Color(0.5,0.7,0.5,0.12))
- for y in range(0,1101,80): draw_line(world_screen(Vector2(0,y)),world_screen(Vector2(1800,y)),Color(0.5,0.7,0.5,0.12))
+ draw_rect(map_rect,Color("617c53"))
+ # Fixed coordinates keep the terrain from flickering as the camera moves.
+ for y in range(20,1100,56):
+  for x in range(20,1800,56):
+   var seed: int = (x * 13 + y * 7) / 56
+   var p = world_screen(Vector2(x+(seed%17)-8,y+(seed%13)-6))
+   if seed%5 == 0:
+    draw_circle(p,18*zoom_level,Color("759060",0.34))
+   elif seed%3 == 0:
+    draw_circle(p,13*zoom_level,Color("465f43",0.25))
+   draw_line(p+Vector2(-5,3)*zoom_level,p+Vector2(-2,-5)*zoom_level,Color("c0bd7a",0.48),maxf(1.0,zoom_level))
+   draw_line(p+Vector2(1,3)*zoom_level,p+Vector2(4,-4)*zoom_level,Color("d0c88a",0.4),maxf(1.0,zoom_level))
+ for home_x in [230,1550]:
+  var home = Vector2(home_x,550)
+  for destination in [home+Vector2(150,100),home+Vector2(40,190),home+Vector2(140,-160)]:
+   draw_line(world_screen(home),world_screen(destination),Color("52664a",0.55),76*zoom_level)
+   draw_line(world_screen(home),world_screen(destination),Color("a48d62",0.86),49*zoom_level)
+   draw_line(world_screen(home),world_screen(destination),Color("b5a178",0.5),30*zoom_level)
+ draw_rect(map_rect,Color("c5af7a",0.6),false,3)
+
+func draw_resource(r: Dictionary):
+ var p = world_screen(r.pos)
+ var s = zoom_level
+ draw_circle(p+Vector2(0,11)*s,27*s,Color(0.11,0.16,0.12,0.32))
+ match r.kind:
+  "wood":
+   draw_rect(Rect2(p+Vector2(-5,-4)*s,Vector2(10,27)*s),Color("6b4a32"))
+   for offset in [Vector2(-13,-12),Vector2(11,-15),Vector2(0,-27)]:
+    draw_circle(p+offset*s,15*s,Color("254f3c"))
+    draw_circle(p+(offset+Vector2(-4,-4))*s,9*s,Color("397451"))
+   draw_line(p+Vector2(-4,7)*s,p+Vector2(5,14)*s,Color("9f7144"),maxf(1.0,2*s))
+  "food":
+   for offset in [Vector2(-12,2),Vector2(12,2),Vector2(0,-11)]:
+    draw_circle(p+offset*s,13*s,Color("446c39"))
+    draw_circle(p+(offset+Vector2(-4,-3))*s,7*s,Color("729653"))
+   for offset in [Vector2(-12,-1),Vector2(8,4),Vector2(1,-14)]:
+    draw_circle(p+offset*s,4*s,Color("b64d43"))
+  "stone", "gold":
+   var rock = Color("a7a79a") if r.kind == "stone" else Color("af9967")
+   draw_colored_polygon(PackedVector2Array([p+Vector2(-23,12)*s,p+Vector2(-16,-12)*s,p+Vector2(2,-21)*s,p+Vector2(21,-10)*s,p+Vector2(25,11)*s]),rock)
+   draw_colored_polygon(PackedVector2Array([p+Vector2(-16,-12)*s,p+Vector2(2,-21)*s,p+Vector2(8,-3)*s,p+Vector2(-6,4)*s]),Color("d1c7a5") if r.kind == "stone" else Color("e6c575"))
+   if r.kind == "gold":
+    for offset in [Vector2(-10,2),Vector2(6,-7),Vector2(13,7)]: draw_circle(p+offset*s,3*s,Color("f1d36f"))
+ label_at(p+Vector2(-22,-34)*s,Rules.RESOURCE_NAMES[r.kind],CREAM,13)
+
+func draw_building(b: Dictionary):
+ var p = world_screen(b.pos)
+ var s: float = Rules.BUILDINGS[b.kind].size*zoom_level
+ var wood = Color("77533a")
+ var roof = Color("704334") if b.team == 0 else Color("5e3535")
+ draw_circle(p+Vector2(2,s*0.5),s*1.3,Color(0.09,0.14,0.1,0.28))
+ if b.kind == "farm":
+  draw_rect(Rect2(p-Vector2(s*1.35,s*0.9),Vector2(s*2.7,s*1.8)),Color("765c40"))
+  for row in range(5):
+   var y = p.y+(row-2)*s*0.31
+   draw_line(Vector2(p.x-s*1.2,y),Vector2(p.x+s*1.2,y),Color("bd9f5c"),maxf(1.0,3*zoom_level))
+   for crop in range(5):
+    draw_circle(Vector2(p.x+(crop-2)*s*0.5,y-3*zoom_level),2.3*zoom_level,Color("a4ad59"))
+  draw_rect(Rect2(p+Vector2(-s*0.55,-s*1.15),Vector2(s*1.1,s*0.55)),Color("bfa780"))
+  draw_colored_polygon(PackedVector2Array([p+Vector2(-s*0.7,-s*1.15),p+Vector2(0,-s*1.7),p+Vector2(s*0.7,-s*1.15)]),roof)
+ else:
+  draw_rect(Rect2(p-Vector2(s,s*0.58),Vector2(s*2,s*1.55)),Color("bba782"))
+  draw_rect(Rect2(p-Vector2(s,s*0.58),Vector2(s*2,s*1.55)),wood,false,maxf(1.0,3*zoom_level))
+  for x_offset in [-0.76,0.76]:
+   draw_line(p+Vector2(s*x_offset,-s*0.5),p+Vector2(s*x_offset,s*0.9),wood,maxf(1.0,3*zoom_level))
+  draw_rect(Rect2(p+Vector2(-s*0.21,s*0.44),Vector2(s*0.42,s*0.53)),Color("563f31"))
+  draw_colored_polygon(PackedVector2Array([p+Vector2(-s*1.15,-s*0.55),p+Vector2(0,-s*1.35),p+Vector2(s*1.15,-s*0.55),p+Vector2(0,s*0.18)]),roof)
+  draw_line(p+Vector2(-s*1.15,-s*0.55),p+Vector2(0,s*0.18),Color("b7895c"),maxf(1.0,3*zoom_level))
+  draw_line(p+Vector2(s*1.15,-s*0.55),p+Vector2(0,s*0.18),Color("b7895c"),maxf(1.0,3*zoom_level))
+  if b.kind == "town":
+   draw_rect(Rect2(p+Vector2(s*0.45,-s*1.4),Vector2(s*0.23,s*0.4)),Color("806c59"))
+   draw_line(p+Vector2(0,-s*1.35),p+Vector2(0,-s*1.9),INK,maxf(1.0,2*zoom_level))
+   draw_colored_polygon(PackedVector2Array([p+Vector2(0,-s*1.9),p+Vector2(s*0.48,-s*1.72),p+Vector2(0,-s*1.55)]),COLORS[b.team])
+ draw_rect(Rect2(p+Vector2(-s,s*0.99),Vector2(2*s,4*zoom_level)),COLORS[b.team])
+ label_at(p+Vector2(-s,s+21),Rules.BUILDINGS[b.kind].name,CREAM,14)
+ if b.progress < 1:
+  draw_rect(Rect2(p+Vector2(-s,s+24),Vector2(2*s*b.progress,5)),Color("e5c178"))
+ draw_rect(Rect2(p+Vector2(-s,-s*2.15),Vector2(2*s*b.hp/Rules.BUILDINGS[b.kind].hp,4)),Color("9ecb85"))
+ if b.id in selected: draw_arc(p,s*1.55,0,TAU,32,Color("f5d789"),2)
+
+func draw_unit(u: Dictionary):
+ var p = world_screen(u.pos)
+ var s = maxf(zoom_level,0.7)
+ draw_circle(p+Vector2(0,6)*s,12*s,Color(0.09,0.13,0.1,0.35))
+ draw_circle(p+Vector2(0,2)*s,10*s,INK)
+ draw_circle(p+Vector2(0,2)*s,8*s,COLORS[u.team])
+ draw_circle(p+Vector2(0,-7)*s,5*s,Color("e9c89c"))
+ if u.kind == "worker":
+  draw_line(p+Vector2(8,-1)*s,p+Vector2(13,-11)*s,wood_color(),maxf(1.0,2*s))
+  draw_line(p+Vector2(10,-11)*s,p+Vector2(17,-11)*s,Color("bdc0ac"),maxf(1.0,3*s))
+ elif u.kind == "scout":
+  draw_colored_polygon(PackedVector2Array([p+Vector2(-8,-4)*s,p+Vector2(-14,8)*s,p+Vector2(0,7)*s]),Color("5c493b"))
+ else:
+  draw_line(p+Vector2(7,-1)*s,p+Vector2(14,-15)*s,Color("d7cfb2"),maxf(1.0,2*s))
+  if u.kind == "archer": draw_arc(p+Vector2(10,-3)*s,8*s,-PI*0.5,PI*0.5,12,Color("ad7b48"),maxf(1.0,2*s))
+ draw_rect(Rect2(p+Vector2(-10,-20)*s,Vector2(20*u.hp/Rules.UNITS[u.kind].hp,3)*s),Color("a4cf85"))
+ if u.id in selected: draw_arc(p,16*s,0,TAU,24,Color("f5d789"),2)
+
+func wood_color() -> Color:
+ return Color("6f4931")
+
+func _draw():
+ draw_ground()
  for r in sim.resources:
   if r.amount <= 0: continue
-  var p = world_screen(r.pos)
-  var color: Color = {"wood":Color("203e2f"),"food":Color("e0a075"),"stone":Color("a0aaa7"),"gold":Color("e9c05a")}[r.kind]
-  draw_circle(p,23*zoom_level,color)
-  label_at(p+Vector2(-20,-26)*zoom_level,Rules.RESOURCE_NAMES[r.kind],Color("f1e9d2"),13)
+  draw_resource(r)
  for b in sim.buildings:
   if b.team != 0 and not sim.visible(b.pos): continue
-  var p = world_screen(b.pos)
-  var size: float = Rules.BUILDINGS[b.kind].size*zoom_level
-  draw_rect(Rect2(p-Vector2(size,size),Vector2(size,size)*2),Color("ac9674"))
-  draw_colored_polygon(PackedVector2Array([p+Vector2(-size,-size),p+Vector2(size,-size),p+Vector2(0,-size*1.7)]),COLORS[b.team])
-  draw_rect(Rect2(p-Vector2(size,size),Vector2(size,size)*2),COLORS[b.team],false,2)
-  label_at(p+Vector2(-size,size+18),Rules.BUILDINGS[b.kind].name,Color.WHITE,14)
-  if b.progress < 1: draw_rect(Rect2(p+Vector2(-size,size+23),Vector2(size*2*b.progress,4)),Color("e9c05a"))
-  draw_rect(Rect2(p+Vector2(-size,-size*1.8-6),Vector2(2*size*b.hp/Rules.BUILDINGS[b.kind].hp,4)),COLORS[b.team])
-  if b.id in selected: draw_arc(p,size*1.6,0,TAU,32,Color("ffe3a0"),2)
+  draw_building(b)
  for u in sim.units:
   if u.team != 0 and not sim.visible(u.pos): continue
-  var p = world_screen(u.pos)
-  draw_circle(p+Vector2(0,5),12*zoom_level,Color(0,0,0,0.25))
-  draw_circle(p,10*zoom_level,COLORS[u.team])
-  draw_circle(p+Vector2(0,-7)*zoom_level,5*zoom_level,Color("edd1a0"))
-  var glyph: String = {"worker":"W","scout":"?","sword":"S","spear":"P","archer":"B"}[u.kind]
-  label_at(p+Vector2(-4,4),glyph,Color("182633"),12)
-  draw_rect(Rect2(p+Vector2(-10,-18)*zoom_level,Vector2(20*u.hp/Rules.UNITS[u.kind].hp,3)*zoom_level),Color("9ada82"))
-  if u.id in selected: draw_arc(p,16*zoom_level,0,TAU,24,Color("ffe3a0"),2)
+  draw_unit(u)
  if fog:
   for y in range(28):
    for x in range(45):
     var center = Vector2(x*40+20,y*40+20)
     if not sim.visible(center):
-     var alpha = 0.52 if sim.discovered.has(Vector2i(x,y)) else 0.96
-     draw_rect(Rect2(world_screen(Vector2(x*40,y*40)),Vector2(40,40)*zoom_level+Vector2.ONE),Color(0.04,0.08,0.09,alpha))
+     var alpha = 0.48 if sim.discovered.has(Vector2i(x,y)) else 0.83
+     draw_rect(Rect2(world_screen(Vector2(x*40,y*40)),Vector2(40,40)*zoom_level+Vector2.ONE),Color(0.08,0.12,0.1,alpha))
  if dragging and pointer.distance_to(drag_start)>16:
   draw_rect(Rect2(drag_start,pointer-drag_start).abs(),Color("ffe3a0"),false,2)
  if not placement.is_empty():
