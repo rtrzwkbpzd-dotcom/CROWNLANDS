@@ -18,3 +18,7 @@ Die vom Projektinhaber gezeigte Referenz und die daraufhin erstellte CROWNLANDS-
 3. **Erste spielbare Runde:** weitere Wirtschaftsgebäude, Kaserne und Kampf in diesem Stil; danach Effekte, Animationen und Optimierung für iPhone/iPad.
 
 Der bisherige `game.gd`-Renderer ist ein funktionaler 2D-Prototyp. Er definiert nicht mehr den Ziel-Look. Der zuvor vorgeschlagene gezeichnete 2D-Stil wurde deshalb nicht in `main` übernommen.
+
+## Erster Assetstand
+
+Die Godot-Szenen `assets/town_hall.tscn`, `house.tscn`, `farm.tscn`, `pine.tscn` und `worker.tscn` enthalten wiederverwendbare, zur Laufzeit erzeugte 3D-Meshes. `assets/medieval_asset.gd` ist ihre gemeinsame Modellquelle. Die getrennte Szene `scenes/style_lab.tscn` setzt alle fünf Assets für Maßstabs- und Farbtests ein. Materialien, Silhouetten und Bauteile sind ein Anfang; Texturen, Animationen, technische Optimierung sowie die Anbindung an die spielbare Simulation folgen.
