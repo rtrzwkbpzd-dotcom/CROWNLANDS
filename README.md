@@ -12,7 +12,7 @@ Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0
 
 ## Enthalten
 
-- Eine frei erkundbare Grünlandkarte, Blau gegen Rot.
+- Eine frei erkundbare Grünlandkarte mit gezeichneten Wegen, Grasstruktur und weicherem Sichtnebel, Blau gegen Rot.
 - Rathaus, vier Arbeiter und Kundschafter je Seite.
 - Vier endliche Rohstoffarten; Farmen liefern im Prototyp unbegrenzt Nahrung.
 - Sechs Gebäudetypen mit Bauzeiten; Baufortschritt erfordert einen anwesenden Arbeiter.
@@ -23,6 +23,7 @@ Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0
 - Sichtweite und grobes Raster für Fog of War; Feinde außerhalb aktueller Sicht werden ausgeblendet.
 - Pause, Neustart und Sieg/Niederlage.
 - Interaktives Einstiegstutorial für Auswahl, Rohstoffabbau, Kaserne und Einheitenproduktion; jederzeit überspringbar oder neu startbar.
+- Erster mittelalterlicher 2D-Grafikstil: Rathaus mit Dach/Fachwerk, Farmbeete, Bäume und erkennbare Rohstofffelder, Figuren mit Ausrüstung sowie Holz-/Gold-Akzente im HUD. Die Formen werden direkt im Spiel gezeichnet; noch keine finalen 3D- oder Animationsassets.
 - Alles lokal, ohne Anmeldung, Werbung, Tracking, Backend oder Zahlungsfunktionen.
 
 ## Steuerung
@@ -65,6 +66,6 @@ Offizielle Anleitung: https://docs.godotengine.org/en/stable/tutorials/export/ex
 
 ## Bekannte Grenzen und Ausbau
 
-Version 0.2 bleibt ein 2D-Funktionsprototyp mit gezeichneten Platzhaltern. Der Rasterpfadfinder plant um Gebäude und Rohstofffelder, und Arbeiter liefern ihre Ladung zurück. Es gibt keine Kavallerie, Belagerung, Zeitalter, Forschung, Audio, Kampagne, Speichern oder Multiplayer. Fernkampfschaden wird direkt angewendet. Die drei KI-Persönlichkeiten des Konzepts sind noch nicht enthalten.
+Version 0.2 bleibt ein 2D-Funktionsprototyp mit einem ersten konsistenten Zeichenstil, aber ohne endgültige Grafiken oder Animationen. Der Rasterpfadfinder plant um Gebäude und Rohstofffelder, und Arbeiter liefern ihre Ladung zurück. Es gibt keine Kavallerie, Belagerung, Zeitalter, Forschung, Audio, Kampagne, Speichern oder Multiplayer. Fernkampfschaden wird direkt angewendet. Die drei KI-Persönlichkeiten des Konzepts sind noch nicht enthalten.
 
 Nächste Prioritäten: Tutorial im Editor durchspielen, Balance und Feedback/Audio verbessern und auf iPad/iPhone testen. Danach können 3D-Ansicht, Zeitalter und weitere Einheiten folgen. Der Name CROWNLANDS ist ein Arbeitstitel; Markenverfügbarkeit wurde nicht geprüft.
