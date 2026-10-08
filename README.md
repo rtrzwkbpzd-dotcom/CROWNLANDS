@@ -2,6 +2,10 @@
 
 Ein eigener RTS-Prototyp für spätere iPhone-/iPad-Veröffentlichung. Version 0.2 nutzt eine einfache 2D-Ansicht mit gezeichneten Platzhaltern. Zielplattform der Entwicklung: Godot 4.4.1 (GDScript, Compatibility-Renderer). Kein externer Asset-Download erforderlich.
 
+Die abgestimmte Grafikrichtung ist eine **stilisierte isometrische 3D-Spielwelt**. Die aktuelle 2D-Ansicht ist nur der Spielkern-Prototyp; siehe [visuelle Zielrichtung](docs/visual-style.md).
+
+Eine getrennte technische 3D-Testszene liegt unter `scenes/style_lab.tscn` (in Godot öffnen und F6 drücken). Sie prüft orthografische Kamera, Licht und Größenverhältnisse mit den ersten wiederverwendbaren 3D-Assets aus `assets/`: Rathaus, Haus, Farm, Tanne und Arbeiter. Die Szenen bestehen noch aus einfachen, farbigen Meshes ohne Texturen und Animationen. Die 3D-Testszene ist noch kein spielbarer Build.
+
 ## Starten
 
 1. Godot 4.4.1 installieren.
